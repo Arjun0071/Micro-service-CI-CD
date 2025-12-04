@@ -51,7 +51,9 @@ jobs:
 
       - run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/user-service:${{ github.sha }} ./user-service
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/user-service:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/user-service:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/user-service:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/user-service:latest
 
   build-order:
     needs: detect
@@ -68,7 +70,9 @@ jobs:
 
       - run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/order-service:${{ github.sha }} ./order-service
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/order-service:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/order-service:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/order-service:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/order-service:latest
 
   build-book:
     needs: detect
@@ -85,7 +89,9 @@ jobs:
 
       - run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/book-service:${{ github.sha }} ./book-service
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/book-service:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/book-service:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/book-service:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/book-service:latest
 
   build-frontend:
     needs: detect
@@ -102,4 +108,6 @@ jobs:
 
       - run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }} ./frontend
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
