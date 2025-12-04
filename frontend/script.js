@@ -65,7 +65,7 @@ async function registerUser() {
         `<div class="alert alert-info">${data.message || JSON.stringify(data)}</div>`;
 }
 
-// LOAD BOOKS AVAILABLE
+// LOAD ALL BOOKS AVAILABLE
 async function loadBooks() {
     const res = await fetch(`${BASE_URL}/books`);
     const books = await res.json();
