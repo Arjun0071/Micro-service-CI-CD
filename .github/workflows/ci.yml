@@ -32,7 +32,7 @@ jobs:
 
     strategy:
       matrix:
-        service: [ user, order, book ]
+        service: [ "user-service", "order-service", "book-service" ]
 
     steps:
       - uses: actions/checkout@v3
