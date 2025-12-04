@@ -29,7 +29,7 @@ func main() {
         c.JSON(200, gin.H{"status": "ok"})
     })
 
-    // Metrics Endpoint
+    // Metrics Endpoints
     r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
     // Book Routes
