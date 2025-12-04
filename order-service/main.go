@@ -31,7 +31,7 @@ func main() {
     // Expose /metrics endpoint
     router.GET("/metrics", gin.WrapH(promhttp.Handler()))
     
-    // Health Endpoint
+    // Health Checks
     router.GET("/health", func(c *gin.Context) {
         c.JSON(200, gin.H{"status": "ok"})
     })
