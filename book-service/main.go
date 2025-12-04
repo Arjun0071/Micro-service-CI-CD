@@ -24,7 +24,7 @@ func main() {
     // CORS middleware (yours)
     r.Use(middlewares.CORSMiddleware())
 
-    // Health Check
+    // Implemented Health Check
     r.GET("/health", func(c *gin.Context) {
         c.JSON(200, gin.H{"status": "ok"})
     })
