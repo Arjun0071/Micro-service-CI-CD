@@ -12,6 +12,7 @@ jobs:
       user-service: ${{ steps.filter.outputs.user-service }}
       order-service: ${{ steps.filter.outputs.order-service }}
       book-service: ${{ steps.filter.outputs.book-service }}
+      frontend: ${{ steps.filter.outputs.frontend }}
 
     steps:
       - name: Checkout PR Branch
@@ -32,6 +33,8 @@ jobs:
               - "order-service/**"
             book-service:
               - "book-service/**"
+            frontend:
+              - "frontend/**"
 
   build-user:
     needs: detect
@@ -83,3 +86,20 @@ jobs:
       - run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/book-service:${{ github.sha }} ./book-service
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/book-service:${{ github.sha }}
+
+  build-frontend:
+    needs: detect
+    if: ${{ needs.detect.outputs['frontend'] == 'true' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }} ./frontend
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }}
