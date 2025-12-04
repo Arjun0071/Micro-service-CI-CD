@@ -1,10 +1,13 @@
 package controllers
 
 import (
+    "log"
     "net/http"
+    "time"
+
     "order-service/models"
     "order-service/utils"
-    "log"
+    "order-service/metrics"
 
     "github.com/gin-gonic/gin"
     "gorm.io/driver/sqlite"
@@ -13,6 +16,7 @@ import (
 
 var db *gorm.DB
 
+// InitDB initializes SQLite and performs migration
 func InitDB() {
     var err error
     db, err = gorm.Open(sqlite.Open("/data/orders.db"), &gorm.Config{})
@@ -26,8 +30,11 @@ func InitDB() {
 
 // CreateOrder creates a new order
 func CreateOrder(c *gin.Context) {
+    start := time.Now() // For duration metric
+
     var input models.CreateOrderInput
     if err := c.ShouldBindJSON(&input); err != nil {
+        metrics.OrdersFailed.WithLabelValues("order-service").Inc()
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
@@ -37,6 +44,7 @@ func CreateOrder(c *gin.Context) {
     // Check book availability
     available, price, err := utils.BookAvailability(input.BookID, input.Quantity)
     if err != nil || !available {
+         metrics.OrdersFailed.WithLabelValues("order-service").Inc()
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
@@ -46,17 +54,19 @@ func CreateOrder(c *gin.Context) {
         BookID:     input.BookID,
         Quantity:   input.Quantity,
         TotalPrice: float64(input.Quantity) * price,
-
-// Note: In a real system, order would remain "pending" until payment confirmation.
-// For this simplified version, we treat a successful availability check as "order placed".
-
         Status:     "placed",
     }
 
     if err := db.Create(&order).Error; err != nil {
+        metrics.OrdersFailed.WithLabelValues("order-service").Inc()
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create order"})
         return
     }
+
+    
+    metrics.OrdersCreated.WithLabelValues("order-service").Inc()
+    metrics.OrdersRevenue.WithLabelValues("order-service").Add(order.TotalPrice)
+    metrics.OrderCreationDuration.WithLabelValues("order-service").Observe(time.Since(start).Seconds())
 
     c.JSON(http.StatusCreated, order)
 }

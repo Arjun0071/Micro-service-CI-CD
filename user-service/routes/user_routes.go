@@ -9,16 +9,6 @@ import (
 
 func RegisterRoutes(router *gin.Engine) {
 
-	// Health endpoint
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
-	})
-
-	// Metrics (placeholder)
-	router.GET("/metrics", func(c *gin.Context) {
-		c.JSON(200, gin.H{"metrics": "coming soon"})
-	})
-
 	// Auth routes
 	router.POST("/users", controllers.RegisterUser)
 	router.POST("/login", controllers.Login)

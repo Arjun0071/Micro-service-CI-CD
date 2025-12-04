@@ -8,15 +8,6 @@ import (
 )
 
 func RegisterRoutes(router *gin.Engine) {
-    // Health endpoint
-    router.GET("/health", func(c *gin.Context) {
-        c.JSON(200, gin.H{"status": "ok"})
-    })
-
-    // Metrics (placeholder)
-    router.GET("/metrics", func(c *gin.Context) {
-        c.JSON(200, gin.H{"metrics": "coming soon"})
-    })
 
     // Protected order routes
     auth := router.Group("/")

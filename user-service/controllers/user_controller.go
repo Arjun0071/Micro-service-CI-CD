@@ -1,28 +1,27 @@
 package controllers
 
 import (
-	"net/http"
-	"user-service/models"
-	"user-service/utils"
-        "log"
-	"github.com/gin-gonic/gin"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+    "net/http"
+    "user-service/models"
+    "user-service/utils"
+    "user-service/metrics"
+    "log"
+    "github.com/gin-gonic/gin"
+    "gorm.io/driver/sqlite"
+    "gorm.io/gorm"
 )
 
 var db *gorm.DB
 
 func InitDB() {
-	var err error
-	db, err = gorm.Open(sqlite.Open("/data/users.db"), &gorm.Config{})
-        if err != nil {
-            log.Fatalf("Failed to connect database: %v", err) // Detailed error
-        }
-	// AutoMigrate separately and check for errors
-	err = db.AutoMigrate(&models.User{})
-        if err != nil {
-            log.Fatalf("Failed to migrate user model: %v", err)
-        }
+    var err error
+    db, err = gorm.Open(sqlite.Open("/data/users.db"), &gorm.Config{})
+    if err != nil {
+        log.Fatalf("Failed to connect database: %v", err)
+    }
+    if err := db.AutoMigrate(&models.User{}); err != nil {
+        log.Fatalf("Failed to migrate user model: %v", err)
+    }
 }
 
 // REGISTER USER
@@ -51,14 +50,19 @@ func RegisterUser(c *gin.Context) {
         return
     }
 
+    // BUSINESS METRIC
+    metrics.UsersRegistered.WithLabelValues("user-service").Inc()
+
     c.JSON(http.StatusCreated, gin.H{"message": "User registered"})
 }
 
 // LOGIN
 func Login(c *gin.Context) {
-    var input models.LoginInput  // <-- instead of inline struct
+    var input models.LoginInput
 
-    // Bind JSON into LoginInput struct
+    // Count every login attempt
+    metrics.LoginAttempts.WithLabelValues("user-service").Inc()
+
     if err := c.ShouldBindJSON(&input); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
@@ -67,8 +71,9 @@ func Login(c *gin.Context) {
     var user models.User
     result := db.Where("email = ?", input.Email).First(&user)
 
-    // Check DB result AND password match
     if result.Error != nil || !utils.CheckPasswordHash(input.Password, user.PasswordHash) {
+        // Count failed login attempt
+        metrics.LoginFailures.WithLabelValues("user-service").Inc()
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
         return
     }
@@ -80,29 +85,32 @@ func Login(c *gin.Context) {
 
 // GET USER (Protected)
 func GetUser(c *gin.Context) {
-	userID := c.MustGet("userID").(uint)
+    userID := c.MustGet("userID").(uint)
 
-	var user models.User
-	db.First(&user, userID)
+    var user models.User
+    db.First(&user, userID)
 
-	c.JSON(http.StatusOK, user)
+    c.JSON(http.StatusOK, user)
 }
 
 // UPDATE USER (Protected)
 func UpdateUser(c *gin.Context) {
-	userID := c.MustGet("userID").(uint)
+    userID := c.MustGet("userID").(uint)
 
-	var user models.User
-	db.First(&user, userID)
+    var user models.User
+    db.First(&user, userID)
 
-	var input models.User
-	c.ShouldBindJSON(&input)
+    var input models.User
+    c.ShouldBindJSON(&input)
 
-	user.Username = input.Username
-	user.Email = input.Email
+    user.Username = input.Username
+    user.Email = input.Email
 
-	db.Save(&user)
+    db.Save(&user)
 
-	c.JSON(http.StatusOK, user)
+    // BUSINESS METRIC
+    metrics.UsersUpdated.WithLabelValues("user-service").Inc()
+
+    c.JSON(http.StatusOK, user)
 }
 

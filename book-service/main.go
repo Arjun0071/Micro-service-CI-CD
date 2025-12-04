@@ -1,28 +1,40 @@
 package main
 
 import (
-	"book-service/routes"
-        "book-service/middlewares"
-	"github.com/gin-gonic/gin"
+    "book-service/routes"
+    "book-service/middlewares"
+    "book-service/metrics"
+    "book-service/controllers"
+    "github.com/gin-gonic/gin"
+    "github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
-	r := gin.Default()
-        
-        r.Use(middlewares.CORSMiddleware())
-	// Health Check
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
-	})
+    service := "book-service"
 
-	// Metrics (dummy for now)
-	r.GET("/metrics", func(c *gin.Context) {
-		c.JSON(200, gin.H{"metrics": "not implemented yet"})
-	})
+    // Initialize DB + metrics
+    controllers.InitDB()
+    metrics.Init(service)
 
-	// Register Book Routes
-	routes.BookRoutes(r)
+    r := gin.Default()
 
-	r.Run(":8082")
+    // Prometheus HTTP middleware
+    r.Use(middlewares.MetricsMiddleware(service))
+
+    // CORS middleware (yours)
+    r.Use(middlewares.CORSMiddleware())
+
+    // Health Check
+    r.GET("/health", func(c *gin.Context) {
+        c.JSON(200, gin.H{"status": "ok"})
+    })
+
+    // Metrics Endpoint
+    r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+    // Book Routes
+    routes.BookRoutes(r)
+
+    r.Run(":8082")
 }
 

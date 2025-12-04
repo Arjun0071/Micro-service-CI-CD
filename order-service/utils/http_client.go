@@ -5,11 +5,32 @@ import (
     "fmt"
     "io/ioutil"
     "net/http"
+    "os"
 )
+
+// Service URLs loaded from environment variables
+var (
+    UserServiceURL string
+    BookServiceURL string
+)
+
+// Init loads environment variables into global variables
+func Init() {
+    UserServiceURL = os.Getenv("USER_SERVICE_URL")
+    BookServiceURL = os.Getenv("BOOK_SERVICE_URL")
+
+    if UserServiceURL == "" {
+        fmt.Println("WARNING: USER_SERVICE_URL is not set")
+    }
+    if BookServiceURL == "" {
+        fmt.Println("WARNING: BOOK_SERVICE_URL is not set")
+    }
+}
+
 
 // BookAvailability checks if a book is available in book-service
 func BookAvailability(bookID uint, quantity int) (bool, float64, error) {
-    url := fmt.Sprintf("http://book-service:8082/books/%d", bookID)
+    url := fmt.Sprintf("%s/books/%d", BookServiceURL, bookID)
     resp, err := http.Get(url)
     if err != nil {
         return false, 0, err
@@ -42,7 +63,7 @@ func BookAvailability(bookID uint, quantity int) (bool, float64, error) {
 
 // VerifyUserToken calls user-service to validate a JWT token
 func VerifyUserToken(token string) (uint, error) {
-    url := "http://user-service:8083/users"
+    url := fmt.Sprintf("%s/users", UserServiceURL)
     req, _ := http.NewRequest("GET", url, nil)
     req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
