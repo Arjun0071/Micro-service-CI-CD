@@ -37,14 +37,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Skip if service did not change
-        if: ${{ needs.detect-changes.outputs[matrix.service] != 'true' }}
+      # Read dynamic output using $GITHUB_OUTPUT
+      - name: Read changed flag
+        id: changed
         run: |
-          echo "No changes in '${{ matrix.service }}', skipping."
+          echo "updated=${{ needs.detect-changes.outputs[matrix.service] }}" >> $GITHUB_OUTPUT
+
+      # Skip using step output (matrix works here)
+      - name: Skip if no changes
+        if: ${{ steps.changed.outputs.updated != 'true' }}
+        run: |
+          echo "No changes in '${{ matrix.service }}' → skipping"
           exit 0
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -52,10 +58,7 @@ jobs:
       - name: Build Image
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:${{ github.sha }} ./${{ matrix.service }}
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:${{ github.sha }} \
-                     ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:latest
 
       - name: Push Image
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:${{ github.sha }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:latest
