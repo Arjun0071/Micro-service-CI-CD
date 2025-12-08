@@ -2,7 +2,7 @@ name: CD - Deploy Changed Services (on CI success)
 
 on:
   workflow_run:
-    workflows: ["PR - Build Changed Microservices"]   # must match your CI workflow name exactly
+    workflows: ["PR - Build Changed Microservices"]   # must match your CI workflow name
     types:
       - completed
 
@@ -21,7 +21,7 @@ jobs:
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: '1.30.0'   # pick a version that matches your cluster
+          version: 'latest'
 
       - name: Configure kubeconfig from secret
         env:
