@@ -2,7 +2,7 @@ name: CD - Deploy Changed Services (on CI success)
 
 on:
   workflow_run:
-    workflows: ["PR - Build Changed Microservices"]   # must match your CI workflow name
+    workflows: ["PR - Build Changed Microservices"]   # should match your CI workflow name
     types:
       - completed
 
