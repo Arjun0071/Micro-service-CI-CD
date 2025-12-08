@@ -114,13 +114,7 @@ jobs:
 
 
   export:
-    needs:
-      - detect
-      - build-user
-      - build-order
-      - build-book
-      - build-frontend
-
+    needs: detect      
     runs-on: ubuntu-latest
     outputs:
       user-service: ${{ needs.detect.outputs['user-service'] }}
