@@ -1,12 +1,11 @@
 name: CD - Deploy Changed Services
 
+# CD must run after merge (push to main) AND after CI workflow completes
 on:
-  # Run CD whenever the code is merged into main (correct behavior)
   push:
     branches:
       - main
 
-  # Also run CD when CI finishes, BUT only if PR is merged
   workflow_run:
     workflows: ["PR - Build Changed Microservices"]
     types:
@@ -14,15 +13,14 @@ on:
 
 jobs:
   deploy:
-    # Run only if:
-    # 1) CI succeeded (workflow_run)
-    # 2) OR code was pushed/merged to main
-    if: |
+    # Run if:
+    #   1) workflow_run event: CI succeeded AND PR was merged
+    #   2) push event: direct merge or manual commit to main
+    if: >
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.pull_requests[0].merged == true)
-      ||
-      (github.event_name == 'push')
+      || (github.event_name == 'push')
 
     runs-on: ubuntu-latest
 
@@ -30,8 +28,7 @@ jobs:
       HELM_NAMESPACE: default
 
     steps:
-
-      - name: Checkout repository at CI commit SHA
+      - name: Checkout repository at correct commit
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -40,7 +37,7 @@ jobs:
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: 'latest'     # stable & supported version
+          version: '1.29.3'
 
       - name: Configure kubeconfig
         env:
@@ -56,63 +53,57 @@ jobs:
         with:
           version: v3.12.0
 
-      - name: Detect changed microservices
+      # READ CHANGED-SERVICE OUTPUTS FROM CI WORKFLOW
+      - name: Import change detection results
         id: changes
         run: |
-          HEAD_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
-          echo "Using HEAD_SHA=$HEAD_SHA"
+          echo "user=${{ github.event.workflow_run.outputs['user-service'] || 'false' }}" >> $GITHUB_OUTPUT
+          echo "order=${{ github.event.workflow_run.outputs['order-service'] || 'false' }}" >> $GITHUB_OUTPUT
+          echo "book=${{ github.event.workflow_run.outputs['book-service'] || 'false' }}" >> $GITHUB_OUTPUT
+          echo "frontend=${{ github.event.workflow_run.outputs['frontend'] || 'false' }}" >> $GITHUB_OUTPUT
 
-          # Compare commit with its parent (safe on merge commits + CI commits)
-          if git rev-parse ${HEAD_SHA}^ >/dev/null 2>&1; then
-            CHANGED=$(git diff --name-only ${HEAD_SHA}^ ${HEAD_SHA})
-          else
-            CHANGED=$(git diff --name-only ${HEAD_SHA} ${HEAD_SHA})
-          fi
+      - name: Debug - Show detected services to deploy
+        run: |
+          echo "User changed    : ${{ steps.changes.outputs.user }}"
+          echo "Order changed   : ${{ steps.changes.outputs.order }}"
+          echo "Book changed    : ${{ steps.changes.outputs.book }}"
+          echo "Frontend changed: ${{ steps.changes.outputs.frontend }}"
 
-          echo "Changed files:"
-          printf "%s\n" "$CHANGED"
-
-          # Outputs using modern GitHub format
-          echo "user=$(echo "$CHANGED" | grep -E '^user-service/' >/dev/null && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "order=$(echo "$CHANGED" | grep -E '^order-service/' >/dev/null && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "book=$(echo "$CHANGED" | grep -E '^book-service/' >/dev/null && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "frontend=$(echo "$CHANGED" | grep -E '^frontend-service/|^frontend/' >/dev/null && echo true || echo false)" >> $GITHUB_OUTPUT
+      # ---------------------------
+      # 🚀 HELM DEPLOYMENT STEPS
+      # ---------------------------
 
       - name: Deploy user-service
         if: ${{ steps.changes.outputs.user == 'true' }}
         run: |
-          TAG=${{ github.event.workflow_run.head_sha || github.sha }}
-          echo "Deploying user-service tag=$TAG"
+          echo "Deploying user-service with 'latest' image"
           helm upgrade --install user-service ./user-service \
             --namespace $HELM_NAMESPACE \
-            --set image.tag=$TAG
+            --set image.tag=latest
 
       - name: Deploy order-service
         if: ${{ steps.changes.outputs.order == 'true' }}
         run: |
-          TAG=${{ github.event.workflow_run.head_sha || github.sha }}
-          echo "Deploying order-service tag=$TAG"
+          echo "Deploying order-service with 'latest' image"
           helm upgrade --install order-service ./order-service \
             --namespace $HELM_NAMESPACE \
-            --set image.tag=$TAG
+            --set image.tag=latest
 
       - name: Deploy book-service
         if: ${{ steps.changes.outputs.book == 'true' }}
         run: |
-          TAG=${{ github.event.workflow_run.head_sha || github.sha }}
-          echo "Deploying book-service tag=$TAG"
+          echo "Deploying book-service with 'latest' image"
           helm upgrade --install book-service ./book-service \
             --namespace $HELM_NAMESPACE \
-            --set image.tag=$TAG
+            --set image.tag=latest
 
-      - name: Deploy frontend-service
+      - name: Deploy frontend
         if: ${{ steps.changes.outputs.frontend == 'true' }}
         run: |
-          TAG=${{ github.event.workflow_run.head_sha || github.sha }}
-          echo "Deploying frontend-service tag=$TAG"
-          helm upgrade --install frontend-service ./frontend-service \
+          echo "Deploying frontend-service with 'latest' image"
+          helm upgrade --install frontend-service ./frontend \
             --namespace $HELM_NAMESPACE \
-            --set image.tag=$TAG
+            --set image.tag=latest
 
       - name: Done
-        run: echo "CD deployment completed."
+        run: echo "CD deployment completed successfully."
