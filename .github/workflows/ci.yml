@@ -111,3 +111,15 @@ jobs:
           docker tag ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
+
+
+  export:
+    needs: [detect]
+    runs-on: ubuntu-latest
+    outputs:
+      user-service: ${{ needs.detect.outputs['user-service'] }}
+      order-service: ${{ needs.detect.outputs['order-service'] }}
+      book-service: ${{ needs.detect.outputs['book-service'] }}
+      frontend: ${{ needs.detect.outputs['frontend'] }}
+    steps:
+      - run: echo "Exporting change detection results for CD workflow"
