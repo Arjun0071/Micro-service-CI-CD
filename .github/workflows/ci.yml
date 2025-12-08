@@ -120,6 +120,7 @@ jobs:
       - build-order
       - build-book
       - build-frontend
+
     runs-on: ubuntu-latest
     outputs:
       user-service: ${{ needs.detect.outputs['user-service'] }}
