@@ -114,7 +114,13 @@ jobs:
 
 
   export:
-    needs: [detect]
+    needs:
+      - detect
+      - build-user
+      - build-order
+      - build-book
+      - build-frontend
+
     runs-on: ubuntu-latest
     outputs:
       user-service: ${{ needs.detect.outputs['user-service'] }}
@@ -122,4 +128,4 @@ jobs:
       book-service: ${{ needs.detect.outputs['book-service'] }}
       frontend: ${{ needs.detect.outputs['frontend'] }}
     steps:
-      - run: echo "Exporting change detection results for CD workflow"
+      - run: echo "Exporting change detection results for CD workflow"       
