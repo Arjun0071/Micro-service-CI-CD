@@ -122,4 +122,13 @@ jobs:
       book-service: ${{ needs.detect.outputs['book-service'] }}
       frontend: ${{ needs.detect.outputs['frontend'] }}
     steps:
-      - run: echo "Exporting change detection results for CD workflow"       
+    - name: Export message
+      run: echo "Exporting change detection results for CD workflow"
+
+    - name: DEBUG export job outputs
+      run: |
+        echo "Exporting values to CD:"
+        echo "user-service=${{ needs.detect.outputs['user-service'] }}"
+        echo "order-service=${{ needs.detect.outputs['order-service'] }}"
+        echo "book-service=${{ needs.detect.outputs['book-service'] }}"
+        echo "frontend=${{ needs.detect.outputs['frontend'] }}"
