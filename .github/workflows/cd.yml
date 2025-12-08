@@ -21,7 +21,7 @@ jobs:
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: '1.30.0'   # pick a version that matches your cluster
+          version: 'latest'
 
       - name: Configure kubeconfig from secret
         env:
