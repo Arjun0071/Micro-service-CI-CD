@@ -1,7 +1,7 @@
 name: CD - Deploy Changed Services
 
 on:
-  # Run CD whenever code is merged into main (correct behavior)
+  # Run CD whenever the code is merged into main (correct behavior)
   push:
     branches:
       - main
