@@ -1,44 +1,64 @@
 name: CD - Deploy Changed Services
 
-# CD must run after merge (push to main) AND after CI workflow completes
 on:
   push:
     branches:
       - main
 
-  workflow_run:
-    workflows: ["PR - Build Changed Microservices"]
-    types:
-      - completed
-
 jobs:
-  deploy:
-    # Run if:
-    #   1) workflow_run event: CI succeeded AND PR was merged
-    #   2) push event: direct merge or manual commit to main
-    if: >
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.pull_requests[0].merged == true)
-      || (github.event_name == 'push')
-
+  detect-changes:
     runs-on: ubuntu-latest
+    outputs:
+      user-service: ${{ steps.filter.outputs.user-service }}
+      order-service: ${{ steps.filter.outputs.order-service }}
+      book-service: ${{ steps.filter.outputs.book-service }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Detect Changed Folders
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          base: ${{ github.ref }}
+          filters: |
+            user-service:
+              - "user-service/**"
+            order-service:
+              - "order-service/**"
+            book-service:
+              - "book-service/**"
+            frontend:
+              - "frontend/**"
+      
+      - name: Debug - Show detected services to deploy
+        run: |
+          echo "User service changed    : ${{ steps.filter.outputs.user-service }}"
+          echo "Order service changed   : ${{ steps.filter.outputs.order-service }}"
+          echo "Book service changed    : ${{ steps.filter.outputs.book-service }}"
+          echo "Frontend changed        : ${{ steps.filter.outputs.frontend }}"
 
+  deploy:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    # Only run if at least one service changed
+    if: |
+      needs.detect-changes.outputs.user-service == 'true' ||
+      needs.detect-changes.outputs.order-service == 'true' ||
+      needs.detect-changes.outputs.book-service == 'true' ||
+      needs.detect-changes.outputs.frontend == 'true'
     env:
       HELM_NAMESPACE: default
-
     steps:
-      - name: Checkout repository at correct commit
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
         with:
           version: 'latest'
-
+      
       - name: Configure kubeconfig
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
@@ -47,63 +67,46 @@ jobs:
           echo "$KUBE_CONFIG_DATA" | base64 --decode > ~/.kube/config
           chmod 600 ~/.kube/config
           kubectl config current-context
-
+      
       - name: Setup Helm
         uses: azure/setup-helm@v3
         with:
           version: v3.12.0
-
-      # READ CHANGED-SERVICE OUTPUTS FROM CI WORKFLOW
-      - name: Import change detection results
-        id: changes
-        run: |
-          echo "user=${{ github.event.workflow_run.outputs['user-service'] || 'false' }}" >> $GITHUB_OUTPUT
-          echo "order=${{ github.event.workflow_run.outputs['order-service'] || 'false' }}" >> $GITHUB_OUTPUT
-          echo "book=${{ github.event.workflow_run.outputs['book-service'] || 'false' }}" >> $GITHUB_OUTPUT
-          echo "frontend=${{ github.event.workflow_run.outputs['frontend'] || 'false' }}" >> $GITHUB_OUTPUT
-
-      - name: Debug - Show detected services to deploy
-        run: |
-          echo "User changed    : ${{ steps.changes.outputs.user }}"
-          echo "Order changed   : ${{ steps.changes.outputs.order }}"
-          echo "Book changed    : ${{ steps.changes.outputs.book }}"
-          echo "Frontend changed: ${{ steps.changes.outputs.frontend }}"
-
+      
       # ---------------------------
       # 🚀 HELM DEPLOYMENT STEPS
       # ---------------------------
-
       - name: Deploy user-service
-        if: ${{ steps.changes.outputs.user == 'true' }}
+        if: needs.detect-changes.outputs.user-service == 'true'
         run: |
           echo "Deploying user-service with 'latest' image"
           helm upgrade --install user-service ./user-service \
             --namespace $HELM_NAMESPACE \
             --set image.tag=latest
-
+      
       - name: Deploy order-service
-        if: ${{ steps.changes.outputs.order == 'true' }}
+        if: needs.detect-changes.outputs.order-service == 'true'
         run: |
           echo "Deploying order-service with 'latest' image"
           helm upgrade --install order-service ./order-service \
             --namespace $HELM_NAMESPACE \
             --set image.tag=latest
-
+      
       - name: Deploy book-service
-        if: ${{ steps.changes.outputs.book == 'true' }}
+        if: needs.detect-changes.outputs.book-service == 'true'
         run: |
           echo "Deploying book-service with 'latest' image"
           helm upgrade --install book-service ./book-service \
             --namespace $HELM_NAMESPACE \
             --set image.tag=latest
-
+      
       - name: Deploy frontend
-        if: ${{ steps.changes.outputs.frontend == 'true' }}
+        if: needs.detect-changes.outputs.frontend == 'true'
         run: |
           echo "Deploying frontend-service with 'latest' image"
           helm upgrade --install frontend-service ./frontend \
             --namespace $HELM_NAMESPACE \
             --set image.tag=latest
-
+      
       - name: Done
         run: echo "CD deployment completed successfully."
