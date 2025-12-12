@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "order-service.fullname" . }}-config
+data:
+  userServiceUrl: {{ .Values.env.USER_SERVICE_URL | quote }}
+  bookServiceUrl: {{ .Values.env.BOOK_SERVICE_URL | quote }}
+

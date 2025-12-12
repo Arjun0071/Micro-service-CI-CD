@@ -1,0 +1,11 @@
+Thank you for installing order-service!
+
+To check the Deployment:
+  kubectl get deploy {{ include "order-service.fullname" . }}
+
+To check Pods:
+  kubectl get pods -l app={{ include "order-service.name" . }}
+
+To check the Service:
+  kubectl get svc {{ include "order-service.fullname" . }}
+

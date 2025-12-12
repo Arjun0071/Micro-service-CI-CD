@@ -1,0 +1,11 @@
+Thank you for installing book-service!
+
+To check the Deployment:
+  kubectl get deploy {{ include "book-service.fullname" . }}
+
+To check Pods:
+  kubectl get pods -l app={{ include "book-service.name" . }}
+
+To check the Service:
+  kubectl get svc {{ include "book-service.fullname" . }}
+

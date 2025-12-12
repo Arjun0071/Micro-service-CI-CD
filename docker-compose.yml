@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  book-service:
+    image: book-service:v1
+    container_name: book-service
+    ports:
+      - "8082:8082"
+    volumes:
+      - /root/book-data:/data
+    networks:
+      - micro-net
+    environment:
+      - DB_PATH=/data/books.db
+
+  user-service:
+    image: user-service:v1
+    container_name: user-service
+    ports:
+      - "8083:8083"
+    volumes:
+      - /root/user-data:/data
+    networks:
+      - micro-net
+    environment:
+      - DB_PATH=/data/users.db
+
+  order-service:
+    image: order-service:v1
+    container_name: order-service
+    ports:
+      - "8084:8084"
+    volumes:
+      - /root/order-data:/data
+    networks:
+      - micro-net
+    environment:
+      - USER_SERVICE_URL=http://user-service:8083
+      - BOOK_SERVICE_URL=http://book-service:8082
+      - DB_PATH=/data/orders.db
+    depends_on:
+      - user-service
+      - book-service
+
+networks:
+  micro-net:
+    driver: bridge
+
