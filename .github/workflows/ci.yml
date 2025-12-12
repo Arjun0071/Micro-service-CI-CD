@@ -112,23 +112,3 @@ jobs:
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
 
-
-  export:
-    needs: detect      
-    runs-on: ubuntu-latest
-    outputs:
-      user-service: ${{ needs.detect.outputs['user-service'] }}
-      order-service: ${{ needs.detect.outputs['order-service'] }}
-      book-service: ${{ needs.detect.outputs['book-service'] }}
-      frontend: ${{ needs.detect.outputs['frontend'] }}
-    steps:
-    - name: Export message
-      run: echo "Exporting change detection results for CD workflow"
-
-    - name: DEBUG export job outputs
-      run: |
-        echo "Exporting values to CD:"
-        echo "user-service=${{ needs.detect.outputs['user-service'] }}"
-        echo "order-service=${{ needs.detect.outputs['order-service'] }}"
-        echo "book-service=${{ needs.detect.outputs['book-service'] }}"
-        echo "frontend=${{ needs.detect.outputs['frontend'] }}"
