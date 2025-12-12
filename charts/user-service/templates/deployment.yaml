@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "user-service.fullname" . }}
+  labels:
+    app: {{ include "user-service.name" . }}
+
+spec:
+  replicas: {{ .Values.replicaCount }}
+
+  selector:
+    matchLabels:
+      app: {{ include "user-service.name" . }}
+
+  template:
+    metadata:
+      labels:
+        app: {{ include "user-service.name" . }}
+    spec:
+      containers:
+        - name: user-service
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          env:
+            - name: DB_PATH
+              value: {{ .Values.env.DB_PATH | quote }}
+
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "user-service.fullname" . }}-secret
+                  key: jwtSecret
+
+          ports:
+            - containerPort: {{ .Values.service.port }}
+
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
+
+          volumeMounts:
+            - name: data-volume
+              mountPath: /data
+
+      volumes:
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: {{ include "user-service.fullname" . }}-pvc
+

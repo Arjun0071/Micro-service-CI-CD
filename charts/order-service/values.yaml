@@ -1,0 +1,33 @@
+replicaCount: 1
+
+image:
+  repository: arjunnigam/order-service
+  tag: "v4"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8084
+
+env:
+  DB_PATH: "/data/orders.db"
+  USER_SERVICE_URL: "http://user-user-service:8083"
+  BOOK_SERVICE_URL: "http://book-service-book:8082"
+  JWT_SECRET: "super-secret-change-me"
+
+ingress:
+  enabled: false
+
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+

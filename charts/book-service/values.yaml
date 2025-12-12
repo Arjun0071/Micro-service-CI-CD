@@ -1,0 +1,46 @@
+replicaCount: 1
+
+image:
+  repository: arjunnigam/book-service
+  tag: "v3"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8082
+
+env:
+  DB_PATH: "/data/books.db"
+
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""
+
+serviceMonitor:
+  enabled: true
+  interval: 15s
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: ""
+      paths:
+        - path: /books
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+

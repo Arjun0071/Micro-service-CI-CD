@@ -1,0 +1,11 @@
+Thank you for installing user-service!
+
+To check the Deployment:
+  kubectl get deploy {{ include "user-service.fullname" . }}
+
+To check Pods:
+  kubectl get pods -l app={{ include "user-service.name" . }}
+
+To check the Service:
+  kubectl get svc {{ include "user-service.fullname" . }}
+

@@ -1,0 +1,20 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "book-service.fullname" . }}-monitor
+  labels:
+    release: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app: {{ include "book-service.name" . }}
+  endpoints:
+    - port: "http"
+      path: /metrics
+      interval: {{ .Values.serviceMonitor.interval }}
+{{- end }}
+
