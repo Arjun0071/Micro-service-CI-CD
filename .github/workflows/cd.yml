@@ -67,7 +67,12 @@ jobs:
           echo "$KUBE_CONFIG_DATA" | base64 --decode > ~/.kube/config
           chmod 600 ~/.kube/config
           kubectl config current-context
-      
+
+      - name: Verify cluster connection
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
       - name: Setup Helm
         uses: azure/setup-helm@v3
         with:
