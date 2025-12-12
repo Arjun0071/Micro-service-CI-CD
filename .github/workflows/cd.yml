@@ -80,7 +80,7 @@ jobs:
         if: needs.detect-changes.outputs.user-service == 'true'
         run: |
           echo "Deploying user-service with 'latest' image"
-          helm upgrade --install user-service ./user-service \
+          helm upgrade --install user ./user-service \
             --namespace $HELM_NAMESPACE \
             --set image.tag=latest
       
@@ -88,7 +88,7 @@ jobs:
         if: needs.detect-changes.outputs.order-service == 'true'
         run: |
           echo "Deploying order-service with 'latest' image"
-          helm upgrade --install order-service ./order-service \
+          helm upgrade --install order ./order-service \
             --namespace $HELM_NAMESPACE \
             --set image.tag=latest
       
@@ -96,7 +96,7 @@ jobs:
         if: needs.detect-changes.outputs.book-service == 'true'
         run: |
           echo "Deploying book-service with 'latest' image"
-          helm upgrade --install book-service ./book-service \
+          helm upgrade --install book ./book-service \
             --namespace $HELM_NAMESPACE \
             --set image.tag=latest
       
@@ -104,7 +104,7 @@ jobs:
         if: needs.detect-changes.outputs.frontend == 'true'
         run: |
           echo "Deploying frontend-service with 'latest' image"
-          helm upgrade --install frontend-service ./frontend \
+          helm upgrade --install frontend ./frontend-service \
             --namespace $HELM_NAMESPACE \
             --set image.tag=latest
       
