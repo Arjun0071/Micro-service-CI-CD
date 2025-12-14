@@ -12,7 +12,7 @@ import (
 func main() {
     service := "book-service"
 
-    // Initialize DB + metrics
+    // Initializing DB + metrics
     controllers.InitDB()
     metrics.Init(service)
 
